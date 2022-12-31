@@ -1,5 +1,5 @@
 # doublefine_mesh_import
-Blender Import plugin for DoubleFine's OGRE engine *".Mesh" / ".Mesh.header" model format
+Blender Import plugin for DoubleFine's BUDDHA engine *".Mesh" / ".Mesh.header" model format
 
 Current status : 
 - Mesh Import           : OK
