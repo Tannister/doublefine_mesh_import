@@ -1,3 +1,5 @@
+###Classes for easy data storage and access
+
 class Bone:
     def __init__(self):
         self.name = ''

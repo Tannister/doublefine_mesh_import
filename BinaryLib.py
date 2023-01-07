@@ -1,6 +1,10 @@
+### Custom Library to help reading Binary data files.
+### Author : Tannister
+
 import struct
 from pathlib import Path
 
+### Endian "Enum"
 class Endian():
     Native         = '@'
     NativeStandard = '='
@@ -8,6 +12,7 @@ class Endian():
     Big            = '>'
     Network        = '!'
 
+### Type Template
 class CType():
     _format = ''
     _size   = 0

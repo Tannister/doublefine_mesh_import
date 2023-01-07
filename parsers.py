@@ -3,6 +3,7 @@ from .BinaryLib import *
 from .classes import *
 
 #Custom CType for BinaryFile
+#Used for vertex data
 class HalfFloat(UInt16):
     @staticmethod
     def HalfToFloat(h):
@@ -19,7 +20,6 @@ class HalfFloat(UInt16):
                     e -= 1
                 e += 1
                 f &= ~0x00000400
-                #print s,e,f
         elif e == 31:
             if f == 0:
                 return int((s << 31) | 0x7f800000)
@@ -41,12 +41,13 @@ class HalfFloat(UInt16):
         
         return tuple(ndata)
 
-#TBD
+### Parser for the *.Material files
 def ParseMaterial(filepath):
     print(f"Parsing \"{filepath}\" ...")  
     data = {}
     return data
 
+### Parser for the *.Mesh.header files
 def ParseMeshesHeader(filepath):
     print(f"Parsing \"{filepath}\" ...")
     data = {}
@@ -96,6 +97,7 @@ def ParseMeshesHeader(filepath):
     bfile.close()
     return data
 
+### Parser for the *.Mesh files
 def ParseMeshes(filepath, meshes_header_data):
     print(f"Parsing \"{filepath}\" ...") 
     bfile = BinaryFile(filepath, Endian.Little)  
@@ -116,6 +118,7 @@ def ParseMeshes(filepath, meshes_header_data):
     bfile.close()
     return meshes_header_data["Meshes"]
 
+### Parser for the .Rig.header Files
 def ParseRigHeader(filepath):
     print(f"Parsing \"{filepath}\" ...")
     bfile = BinaryFile(filepath, Endian.Little)
@@ -123,12 +126,11 @@ def ParseRigHeader(filepath):
     bfile.close()
     return {
         "Bone_Count"  : data[4],
-        "UNK1_Offset" : data[19],
         "PID_Offset"  : data[20],
-        "UNK2_Offset" : data[23],
         "MAT4_Offset" : data[24],
     }
 
+### Parser for the .Rig Files
 def ParseRig(filepath, header_data):
     print(f"Parsing \"{filepath}\" ...")
     Bones = []   
