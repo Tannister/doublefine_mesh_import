@@ -1,6 +1,73 @@
 import bpy
 import bmesh, mathutils
-import math
+import os, math
+
+from pathlib import Path
+
+def LoadImage(path):
+    path = Path(path)
+    if(path.is_file()):
+        return bpy.data.images.load(str(path), check_existing=True)
+    else:
+        print("Image file (", path ,") not found !")
+        return None
+
+def GenerateMaterials(materials_data, basepath):
+    print(f"Generating materials ...")
+    data = []
+    reports = []
+    for mat_data in materials_data:
+        print(" |-> Creating", mat_data["Name"])
+        if(mat_data["Data"] != None):
+            try:
+                template = bpy.data.materials[mat_data["Data"]["ShaderName"]]
+            except KeyError:
+                print("     Unsupported Shader :", mat_data["Data"]["ShaderName"])
+                reports.append(({'WARNING'}, f"Unsupported Material ({mat_data['Name']}) Shader : {mat_data['Data']['ShaderName']}.\nThis one will appear blank !"))
+                mat = bpy.data.materials.new(name=mat_data["Name"])
+                data.append(mat)
+                continue
+            
+            mat = template.copy()
+            mat.name = mat_data["Name"]
+            data.append(mat)
+                
+            nodes = mat.node_tree.nodes
+                
+            if(mat_data["Data"]["ShaderName"] == "RenderMesh"):
+                if(mat_data["Data"]["BlendMode"] == "kBLEND_Default"):
+                    if(mat_data['Data']['DiffuseTexture'] != "@"):
+                        nodes["DiffuseTexture"].image = LoadImage(f"{basepath}{mat_data['Data']['DiffuseTexture'][1:]}.dds")
+                    nodes["DiffuseTiling"].outputs[0].default_value = float(mat_data['Data']['DiffuseTiling'])
+                    color = mat_data['Data']['DiffuseColor'][1:-1].split(',')
+                    nodes["DiffuseColor"].outputs[0].default_value = (float(color[0]), float(color[1]), float(color[2]), 1.0)
+                    
+                    if(mat_data['Data']['GlossTexture'] != "@"):
+                        nodes["GlossTexture"].image = LoadImage(f"{basepath}{mat_data['Data']['GlossTexture'][1:]}.dds")
+                    nodes["GlossTiling"].outputs[0].default_value = float(mat_data['Data']['GlossTiling'])
+                    nodes["Roughness"].outputs[0].default_value = 1.0 - float(mat_data['Data']['Roughness'])
+                    nodes["Fresnel"].outputs[0].default_value = float(mat_data['Data']['Fresnel'])
+                    color = mat_data['Data']['SpecularColor'][1:-1].split(',')
+                    nodes["SpecularColor"].outputs[0].default_value = (float(color[0]), float(color[1]), float(color[2]), 1.0)
+                    
+                    if(mat_data['Data']['Normal1Texture'] != "@"):
+                        nodes["Normal1Texture"].image = LoadImage(f"{basepath}{mat_data['Data']['Normal1Texture'][1:]}.dds")
+                        nodes['Normal1Texture'].image.colorspace_settings.name='Non-Color'
+                    nodes["Normal1Tiling"].outputs[0].default_value = float(mat_data['Data']['Normal1Tiling'])
+                    nodes["Normal1Scale"].outputs[0].default_value = float(mat_data['Data']['Normal1Scale'])
+                    
+                    if(mat_data['Data']['Normal2Texture'] != "@"):
+                        nodes["Normal2Texture"].image = LoadImage(f"{basepath}{mat_data['Data']['Normal2Texture'][1:]}.dds")
+                        nodes['Normal2Texture'].image.colorspace_settings.name='Non-Color'
+                    nodes["Normal2Tiling"].outputs[0].default_value = float(mat_data['Data']['Normal2Tiling'])
+                    nodes["Normal2Scale"].outputs[0].default_value = float(mat_data['Data']['Normal2Scale'])
+                else:
+                    print("     Unsupported Blend Mode :", mat_data["Data"]["BlendMode"])
+                    reports.append(({'WARNING'}, f"Unsupported Material ({mat_data['Name']}) Blend Mode : {mat_data['Data']['BlendMode']}.\nThis one will appear blank !"))
+        else:
+            mat = bpy.data.materials.new(name=mat_data["Name"])
+            data.append(mat)
+    return data, reports
 
 ### Generate the Armature from the collected rig data
 def GenerateArmature(collection, rig_data):
@@ -39,7 +106,7 @@ def GenerateArmature(collection, rig_data):
     return obj
 
 ### Generate Meshes from collected data
-def GenerateMeshes(collection, meshes_data, rig_data):
+def GenerateMeshes(collection, meshes_data, rig_data, materials):
     armature_obj = None
     if(rig_data is not None):
         #Generate the armature object if the rig data was collected
@@ -75,6 +142,9 @@ def GenerateMeshes(collection, meshes_data, rig_data):
         
         #Add the object to the collection
         collection.objects.link(obj)
+        
+        #Add material to the object's material list
+        obj.data.materials.append(materials[mesh_data.MatID])
         
         # Create the BMesh and the apropriate layers
         bm = bmesh.new() 
@@ -136,6 +206,8 @@ def GenerateMeshes(collection, meshes_data, rig_data):
         for face_indices in face_list:
             try:
                 face = bm.faces.new(face_indices)
+                face.material_index = 0
+                face.smooth = True
             except ValueError as e:
                 pass
 

@@ -1,9 +1,11 @@
 import bpy
+import addon_utils
+
+import os
 
 from pathlib import Path
 from .parsers import *
 from .generators import *
-
 bl_info = {
     "name": "Import DoubleFine Model (.Mesh)",
     "description": "Import DoubleFine's proprietary 3D model format",
@@ -41,12 +43,34 @@ class Importer(Operator, ImportHelper):
     )
 
     def execute(self, context):
+        print("\nImporting DoubleFine Model...")
+        print(" |->", self.filepath)
+    
+        print("Checking...")
+        
+        plugin_path = None
+        for mod in addon_utils.modules():
+            if mod.bl_info['name'] == bl_info['name']:
+                plugin_path = os.path.dirname(mod.__file__)
+            else:
+                pass
+                
+        buddha_materials_path = Path(plugin_path, "BUDDHA_MATERIALS.blend")
+    
+        create_materials = True
+        if(buddha_materials_path.exists()):
+            print(' |->', buddha_materials_path, "found ! Importing material templates")
+            with bpy.data.libraries.load(str(buddha_materials_path), link=False) as (data_from, data_to):
+                data_to.materials = data_from.materials
+                for mat in data_to.materials:
+                    if mat is not None:
+                        print('     |->', mat)
+        else:
+            print(' |->', buddha_materials_path, "not found !")
+            self.report({'ERROR'}, "Couldn't find the included material template library ! Please re-install the plug-in !")
+            create_materials = False
+
         basepath = None
-    
-        print("\nImporting DoubleFine Model...\n")
-    
-        print("Path :", self.filepath)
-       
         if(self.get_extern_assets):
             if("audio" in self.filepath):
                 basepath = self.filepath.split("audio")[0]
@@ -96,9 +120,10 @@ class Importer(Operator, ImportHelper):
                 basepath = self.filepath.split("win")[0]
             elif("worlds" in self.filepath):
                 basepath = self.filepath.split("worlds")[0]
-            print("Base Path :", basepath)
+            print(" |-> Base Path :", basepath)
         
-        print("\nParsing Files...\n")
+        if(basepath == None):
+            self.report({'WARNING'},"Importing a MESH outside of BUDDHA's file structure ! Some materials & textures will be missing !")
         
         #get local paths
         rig_header_path = Path(f"{self.filepath.split('.Mesh')[0]}.Rig.header")
@@ -117,23 +142,29 @@ class Importer(Operator, ImportHelper):
             print('No Rig Found.')
         
         meshes_header_data = ParseMeshesHeader(f"{self.filepath}.header")
+        meshes_data = ParseMeshes(self.filepath, meshes_header_data)
         
         materials_data = []
         for mat_path in meshes_header_data["Materials"]:
-            mat_data = {"Name": mat_path.split('/')[-1], "Data": None}         
-            mat_filepath = Path(f"{basepath}{mat_path}.material")
-            if(mat_filepath.exists()):
-                mat_data["Data"] = ParseMaterial(mat_filepath)
-            else:
-                print("No file for material :", mat_data["Name"])
-            
-        meshes_data = ParseMeshes(self.filepath, meshes_header_data)
+            mat_data = {"Name": mat_path.split('/')[-1], "Data": None}   
+            if(create_materials):
+                mat_filepath = Path(f"{basepath}{mat_path}.material")
+                if(mat_filepath.exists()):
+                    mat_data["Data"] = ParseMaterial(mat_filepath)
+                else:
+                    print(" |->", mat_data["Name"], "Not Found")
+                    self.report({'WARNING'},f"Couldn't find the material definition file for : {mat_data['Name']} !")
+            materials_data.append(mat_data)
         
         #Generate Objects
         collection = bpy.data.collections.new(self.filepath.split("\\")[-1])
         bpy.context.scene.collection.children.link(collection)
 
-        mesh_objects = GenerateMeshes(collection, meshes_data, rig_data)
+        material_objects, reports = GenerateMaterials(materials_data, basepath)  
+        for report in reports:
+            self.report(report[0], report[1])
+        
+        mesh_objects = GenerateMeshes(collection, meshes_data, rig_data, material_objects)
         return {'FINISHED'}
 
 def menu_func_import(self, context):

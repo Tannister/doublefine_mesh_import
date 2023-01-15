@@ -41,11 +41,62 @@ class HalfFloat(UInt16):
         
         return tuple(ndata)
 
+### Utility Function to parse BUDDHA's plaintext object definition strings
+def ParseObjectString(string):
+    data = {}
+    current_tag = ""
+    previous_tag = ""
+    object_name = ""
+    mode = 0
+    count = 0
+    for c in string:
+        if(mode in [0, 1]):
+            if(c == '=' and mode == 0): 
+                previous_tag = current_tag
+                current_tag = ""
+                mode = 1
+            elif(c == ';' and mode == 1):
+                data[previous_tag] = current_tag
+                current_tag = ""
+                mode = 0
+            elif(c == '{'): 
+                count = 1
+                object_name = current_tag
+                current_tag = ""
+                mode = 2 if mode == 0 else 3
+                
+            else: current_tag = f"{current_tag}{c}"
+        elif(mode in [2, 3]):
+            current_tag = f"{current_tag}{c}"
+            if(c == '{'): 
+                count += 1
+            elif(c == '}'):
+                count -= 1
+                
+            if(count == 0):
+                if(data == {}):
+                    data = {"Name": object_name, "Data": ParseObjectString(current_tag[:-1])}
+                else:
+                    data[previous_tag] = {"Name": object_name, "Data": ParseObjectString(current_tag[:-1])}
+                mode = 0 if mode == 2 else 1
+    return data
+
+
 ### Parser for the *.Material files
 def ParseMaterial(filepath):
-    print(f"Parsing \"{filepath}\" ...")  
-    data = {}
-    return data
+    print(f"Parsing \"{filepath}\" ...")
+    bfile = BinaryFile(filepath, Endian.Little)
+    
+    length = bfile.read(UInt32, 1)
+    text = bfile.read(Char, length-1)
+
+    bfile.close()
+     
+    data = ParseObjectString(text)
+    
+    if(data['Name'] == "1Material"):
+        return data["Data"]
+    return None
 
 ### Parser for the *.Mesh.header files
 def ParseMeshesHeader(filepath):
@@ -67,7 +118,7 @@ def ParseMeshesHeader(filepath):
     data['Materials'] = []
     for m in range(mat_count):
         str_length = bfile.read(UInt32, 1)
-        data['Materials'].append(bfile.read(Char, str_length)[:-1])
+        data['Materials'].append(bfile.read(Char, str_length)[:-1]) #Read the '\x00' char, but remove it from the string
     
     mesh_count = bfile.read(UInt32, 1)
     data["Meshes"] = []
