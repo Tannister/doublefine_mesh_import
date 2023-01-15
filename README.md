@@ -4,7 +4,7 @@ Blender Import plugin for DoubleFine's BUDDHA engine *".Mesh" / ".Mesh.header" m
 Current status :   
 - Mesh Import           : OK  
 - Armature / Rig Import : OK  
-- Material Import       : WIP
+- Material Import       : Partial, WIP
 
 File List of a BUDDHA Engine Model :   
 - *.Mesh & *.Mesh.header	-> Mesh(es) [REQUIRED FILES]
