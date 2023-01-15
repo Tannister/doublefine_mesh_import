@@ -46,7 +46,7 @@ class Importer(Operator, ImportHelper):
         print("\nImporting DoubleFine Model...")
         print(" |->", self.filepath)
     
-        print("Checking...")
+        print("\nChecking...")
         
         plugin_path = None
         for mod in addon_utils.modules():
@@ -64,10 +64,10 @@ class Importer(Operator, ImportHelper):
                 data_to.materials = data_from.materials
                 for mat in data_to.materials:
                     if mat is not None:
-                        print('     |->', mat)
+                        print(' |   |->', mat)
         else:
             print(' |->', buddha_materials_path, "not found !")
-            self.report({'ERROR'}, "Couldn't find the included material template library ! Please re-install the plug-in !")
+            self.report({'ERROR'}, "Couldn't find the included material template library !\nMaterials will look blank !\nPlease re-install the plug-in to fix this !")
             create_materials = False
 
         basepath = None
@@ -133,6 +133,8 @@ class Importer(Operator, ImportHelper):
         
         has_rig = (rig_header_path.exists() and rig_path.exists())
         
+        print("\nParsing files ...")
+        
         #Parse Files
         rig_data = None
         if(has_rig):
@@ -155,6 +157,8 @@ class Importer(Operator, ImportHelper):
                     print(" |->", mat_data["Name"], "Not Found")
                     self.report({'WARNING'},f"Couldn't find the material definition file for : {mat_data['Name']} !")
             materials_data.append(mat_data)
+        
+        print("\nCreating objects ...")
         
         #Generate Objects
         collection = bpy.data.collections.new(self.filepath.split("\\")[-1])

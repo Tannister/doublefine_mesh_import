@@ -33,40 +33,90 @@ def GenerateMaterials(materials_data, basepath):
             data.append(mat)
                 
             nodes = mat.node_tree.nodes
-                
+            
+            #Shaders
             if(mat_data["Data"]["ShaderName"] == "RenderMesh"):
-                if(mat_data["Data"]["BlendMode"] == "kBLEND_Default"):
-                    if(mat_data['Data']['DiffuseTexture'] != "@"):
-                        nodes["DiffuseTexture"].image = LoadImage(f"{basepath}{mat_data['Data']['DiffuseTexture'][1:]}.dds")
-                    nodes["DiffuseTiling"].outputs[0].default_value = float(mat_data['Data']['DiffuseTiling'])
-                    color = mat_data['Data']['DiffuseColor'][1:-1].split(',')
-                    nodes["DiffuseColor"].outputs[0].default_value = (float(color[0]), float(color[1]), float(color[2]), 1.0)
+                if(mat_data['Data']['DiffuseTexture'] != "@"):
+                    nodes["DiffuseTexture"].image = LoadImage(f"{basepath}{mat_data['Data']['DiffuseTexture'][1:]}.dds")
+   
+                if(mat_data['Data']['GlossTexture'] != "@"):
+                    nodes["GlossTexture"].image = LoadImage(f"{basepath}{mat_data['Data']['GlossTexture'][1:]}.dds")
+                
+                if(mat_data['Data']['Normal1Texture'] != "@"):
+                    nodes["Normal1Texture"].image = LoadImage(f"{basepath}{mat_data['Data']['Normal1Texture'][1:]}.dds")
+                    nodes['Normal1Texture'].image.colorspace_settings.name='Non-Color'
+                
+                if(mat_data['Data']['Normal2Texture'] != "@"):
+                    nodes["Normal2Texture"].image = LoadImage(f"{basepath}{mat_data['Data']['Normal2Texture'][1:]}.dds")
+                    nodes['Normal2Texture'].image.colorspace_settings.name='Non-Color'
+                
+                nodes["DiffuseTiling"].outputs[0].default_value = float(mat_data['Data']['DiffuseTiling'])
+                nodes["GlossTiling"].outputs[0].default_value = float(mat_data['Data']['GlossTiling'])
+                nodes["Roughness"].outputs[0].default_value = 1.0 - float(mat_data['Data']['Roughness'])
+                nodes["Fresnel"].outputs[0].default_value = 1.0 - float(mat_data['Data']['Fresnel'])
+                nodes["Normal1Tiling"].outputs[0].default_value = float(mat_data['Data']['Normal1Tiling'])
+                nodes["Normal1Scale"].outputs[0].default_value = float(mat_data['Data']['Normal1Scale'])
+                nodes["Normal2Tiling"].outputs[0].default_value = float(mat_data['Data']['Normal2Tiling'])
+                nodes["Normal2Scale"].outputs[0].default_value = float(mat_data['Data']['Normal2Scale'])
+                
+                color = mat_data['Data']['DiffuseColor'][1:-1].split(',')
+                nodes["DiffuseColor"].outputs[0].default_value = (float(color[0]), float(color[1]), float(color[2]), 1.0)
+                color = mat_data['Data']['SpecularColor'][1:-1].split(',')
+                nodes["SpecularColor"].outputs[0].default_value = (float(color[0]), float(color[1]), float(color[2]), 1.0)
+            
+            elif(mat_data["Data"]["ShaderName"] == "RenderHair"):
+                if(mat_data['Data']['DiffuseTexture'] != "@"):
+                    nodes["DiffuseTexture"].image = LoadImage(f"{basepath}{mat_data['Data']['DiffuseTexture'][1:]}.dds")
+                    nodes['DiffuseTexture'].image.colorspace_settings.name='Non-Color'
                     
-                    if(mat_data['Data']['GlossTexture'] != "@"):
-                        nodes["GlossTexture"].image = LoadImage(f"{basepath}{mat_data['Data']['GlossTexture'][1:]}.dds")
-                    nodes["GlossTiling"].outputs[0].default_value = float(mat_data['Data']['GlossTiling'])
-                    nodes["Roughness"].outputs[0].default_value = 1.0 - float(mat_data['Data']['Roughness'])
-                    nodes["Fresnel"].outputs[0].default_value = float(mat_data['Data']['Fresnel'])
-                    color = mat_data['Data']['SpecularColor'][1:-1].split(',')
-                    nodes["SpecularColor"].outputs[0].default_value = (float(color[0]), float(color[1]), float(color[2]), 1.0)
+                if(mat_data['Data']['Ramp1Texture'] != "@"):
+                    nodes["Ramp1Texture"].image = LoadImage(f"{basepath}{mat_data['Data']['Ramp1Texture'][1:]}.dds")
                     
-                    if(mat_data['Data']['Normal1Texture'] != "@"):
-                        nodes["Normal1Texture"].image = LoadImage(f"{basepath}{mat_data['Data']['Normal1Texture'][1:]}.dds")
-                        nodes['Normal1Texture'].image.colorspace_settings.name='Non-Color'
-                    nodes["Normal1Tiling"].outputs[0].default_value = float(mat_data['Data']['Normal1Tiling'])
-                    nodes["Normal1Scale"].outputs[0].default_value = float(mat_data['Data']['Normal1Scale'])
+                if(mat_data['Data']['Ramp2Texture'] != "@"):
+                    nodes["Ramp2Texture"].image = LoadImage(f"{basepath}{mat_data['Data']['Ramp2Texture'][1:]}.dds")
+                
+                if(mat_data['Data']['Normal1Texture'] != "@"):
+                    nodes["Normal1Texture"].image = LoadImage(f"{basepath}{mat_data['Data']['Normal1Texture'][1:]}.dds")
+                    nodes['Normal1Texture'].image.colorspace_settings.name='Non-Color'
+
+                if(mat_data['Data']['Normal2Texture'] != "@"):
+                    nodes["Normal2Texture"].image = LoadImage(f"{basepath}{mat_data['Data']['Normal2Texture'][1:]}.dds")
+                    nodes['Normal2Texture'].image.colorspace_settings.name='Non-Color'
                     
-                    if(mat_data['Data']['Normal2Texture'] != "@"):
-                        nodes["Normal2Texture"].image = LoadImage(f"{basepath}{mat_data['Data']['Normal2Texture'][1:]}.dds")
-                        nodes['Normal2Texture'].image.colorspace_settings.name='Non-Color'
-                    nodes["Normal2Tiling"].outputs[0].default_value = float(mat_data['Data']['Normal2Tiling'])
-                    nodes["Normal2Scale"].outputs[0].default_value = float(mat_data['Data']['Normal2Scale'])
-                else:
-                    print("     Unsupported Blend Mode :", mat_data["Data"]["BlendMode"])
-                    reports.append(({'WARNING'}, f"Unsupported Material ({mat_data['Name']}) Blend Mode : {mat_data['Data']['BlendMode']}.\nThis one will appear blank !"))
+                nodes["DiffuseTiling"].outputs[0].default_value = float(mat_data['Data']['DiffuseTiling'])
+                nodes["Roughness"].outputs[0].default_value = 1.0 - float(mat_data['Data']['Roughness'])
+                nodes["Fresnel"].outputs[0].default_value = 1.0 - float(mat_data['Data']['Fresnel'])
+                nodes["Normal1Tiling"].outputs[0].default_value = float(mat_data['Data']['Normal1Tiling'])
+                nodes["Normal1Scale"].outputs[0].default_value = float(mat_data['Data']['Normal1Scale'])
+                nodes["Normal2Tiling"].outputs[0].default_value = float(mat_data['Data']['Normal2Tiling'])
+                nodes["Normal2Scale"].outputs[0].default_value = float(mat_data['Data']['Normal2Scale'])
+                
+                color = mat_data['Data']['DiffuseColor'][1:-1].split(',')
+                nodes["DiffuseColor"].outputs[0].default_value = (float(color[0]), float(color[1]), float(color[2]), 1.0)
+                color = mat_data['Data']['SpecularColor'][1:-1].split(',')
+                nodes["SpecularColor"].outputs[0].default_value = (float(color[0]), float(color[1]), float(color[2]), 1.0)
+
+            # BLEND MODES
+            if(mat_data["Data"]["BlendMode"] == "kBLEND_Default"):
+                nodes["BlendMode"].node_tree = bpy.data.node_groups["kBLEND_Default"]
+                mat.blend_method = 'OPAQUE'
+            elif(mat_data["Data"]["BlendMode"] == "kBLEND_Alpha"):
+                nodes["BlendMode"].node_tree = bpy.data.node_groups["kBLEND_Alpha"]
+                mat.blend_method = 'BLEND'
+            elif(mat_data["Data"]["BlendMode"] == "kBLEND_BinaryAlpha"):
+                nodes["BlendMode"].node_tree = bpy.data.node_groups["kBLEND_Alpha"]
+                mat.blend_method = 'CLIP'
+                mat.alpha_threshold = 0.5
+            elif(mat_data["Data"]["BlendMode"] == "kBLEND_Additive"):
+                nodes["BlendMode"].node_tree = bpy.data.node_groups["kBLEND_Additive"]
+                mat.blend_method = 'BLEND'
+            else:
+                print("     Unsupported Blend Mode :", mat_data["Data"]["BlendMode"])
+                reports.append(({'WARNING'}, f"Unsupported Material ({mat_data['Name']}) Blend Mode : {mat_data['Data']['BlendMode']}.\nThis one will look bad !"))
         else:
             mat = bpy.data.materials.new(name=mat_data["Name"])
             data.append(mat)
+            continue
     return data, reports
 
 ### Generate the Armature from the collected rig data
